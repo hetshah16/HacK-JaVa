@@ -1109,7 +1109,7 @@ def process_video(model_func, model_name):
     cv2.destroyAllWindows()
 
 # Main function to start the app
-def start_app():
+def start_app(user):
     st.title("AI Surveillance System")
 
     # Initialize session state for alerts if not already done
@@ -1133,31 +1133,46 @@ def start_app():
 
 if __name__ == "__main__":
    # Only keep this main function
-def start_app():
+def start_app(user):
+    """
+    Start the AI Surveillance System dashboard for the authenticated user.
+    
+    Args:
+        user: Dictionary containing user details (username, role)
+    """
     st.title("AI Surveillance System")
+    st.success(f"Welcome, {user['username']} ({user['role']})")
 
-    # Initialize session state for alerts if not already done
-    if "alerts" not in st.session_state:
+    if user["role"] == "admin":
+        st.write("🛡️ Admin Panel: Full access to surveillance features")
+    elif user["role"] == "user":
+        st.write("👤 User Dashboard: Limited access to surveillance features")
+
+    if st.button("Logout"):
+        st.session_state.pop("token", None)
+        st.session_state.page = "Login"
         st.session_state.alerts = []
+        st.success("Logged out successfully!")
+        st.rerun()
 
-    # Define options and ensure each selectbox has a unique key
-    options = ["Face Recognition", "Fight Detection", "Crowd Density", "Guard Attentiveness", "Gender Detection"]
-
-    # Add a unique key to avoid DuplicateWidgetID error
-    choice = st.sidebar.selectbox("Select Model", options, key="model_choice_selectbox")
+    options = ["Face Recognition", "Fight Detection", "Object Detection", "Guard Attentiveness", "Gender Detection", "Crowd Density"]
+    if user["role"] == "user":
+        options = ["Face Recognition", "Object Detection", "Gender Detection"]  # Restrict user access
+    choice = st.sidebar.selectbox("Select Model", options)
 
     if choice == "Face Recognition":
         process_video(detect_face, "face_recognition")
     elif choice == "Fight Detection":
         process_video_with_webrtc()
-    elif choice == "Crowd Density":
-        process_video(detect_crowd_density, "crowd_density")
+    elif choice == "Object Detection":
+        process_video(detect_objects, "object_detection")
     elif choice == "Guard Attentiveness":
         process_video(detect_guard_attentiveness, "guard_attentiveness")
     elif choice == "Gender Detection":
-        # Call the detect_gender function when Gender Detection tab is selected
-        gender_result, gender_alert = detect_gender(None)
-        st.write(gender_alert)
+        process_video(detect_gender, "gender_detection")
+    elif choice == "Crowd Density":
+        process_video(detect_crowd_density, "crowd_density")
+
 
 # Only have one call at the end
 if __name__ == "__main__":
